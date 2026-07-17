@@ -12,40 +12,14 @@ import {
   View
 } from 'react-native';
 
-// ข้อมูลน้ำหอมพร้อมรูปภาพ
-const PERFUME_DATA = [
-  { 
-    id: '1', 
-    name: 'Midnight Oud Parfum', 
-    stock: 8, 
-    category: 'Perfume', 
-    locations: 2,
-    imageUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=500&auto=format&fit=crop&q=60'
-  },
-  { 
-    id: '2', 
-    name: 'Ocean Breeze Eau De Toilette', 
-    stock: 15, 
-    category: 'Perfume', 
-    locations: 3,
-    imageUrl: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=500&auto=format&fit=crop&q=60'
-  },
-  { 
-    id: '3', 
-    name: 'Rose Noir Luxury Edition', 
-    stock: 5, 
-    category: 'Perfume', 
-    locations: 1,
-    imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=500&auto=format&fit=crop&q=60'
-  },
-];
+// ดึงข้อมูลสินค้าโดยตรงจากไฟล์ product.json ที่เราเพิ่งสร้าง
+import PERFUME_DATA from '../../product.json';
 
 export default function ProductsScreen() {
   const [search, setSearch] = useState('');
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ตั้งค่าแถบเวลา/แบตเตอรี่ด้านบนสุดของมือถือให้เป็นธีมมืด */}
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
 
       {/* --- ส่วนหัว / Header --- */}
