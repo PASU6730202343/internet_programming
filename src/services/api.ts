@@ -1,13 +1,11 @@
-// ดึงค่า URL จาก .env หรือใช้ Local Server / Remote Server ตามลำดับ
+// ดึงค่า URL จาก .env หรือใช้ Local Server ตามลำดับ
 const DEFAULT_LOCAL_URL = 'http://localhost:3034/api';
-const DEFAULT_REMOTE_URL = 'http://119.59.102.161:3034/api';
 
 const getBaseUrls = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   const urls = [];
   if (envUrl) urls.push(envUrl);
   if (!urls.includes(DEFAULT_LOCAL_URL)) urls.push(DEFAULT_LOCAL_URL);
-  if (!urls.includes(DEFAULT_REMOTE_URL)) urls.push(DEFAULT_REMOTE_URL);
   return urls;
 };
 
