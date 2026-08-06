@@ -1,6 +1,6 @@
 // ดึงค่า URL จาก .env หรือใช้ Local Server / Remote Server ตามลำดับ
-const DEFAULT_LOCAL_URL = 'http://localhost:3079/api';
-const DEFAULT_REMOTE_URL = 'http://119.59.102.161:3079/api';
+const DEFAULT_LOCAL_URL = 'http://localhost:3034/api';
+const DEFAULT_REMOTE_URL = 'http://119.59.102.161:3034/api';
 
 const getBaseUrls = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -14,7 +14,7 @@ const getBaseUrls = () => {
 export const apiCall = async (endpoint: string, options: any = {}) => {
   const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const baseUrls = getBaseUrls();
-  
+
   const config: RequestInit = {
     method: 'GET',
     mode: 'cors',
