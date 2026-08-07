@@ -1,10 +1,12 @@
 import { Platform } from 'react-native';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const comicBg = require('../../assets/comic-bg.png');
+
 /**
  * Injects global CSS for the web platform:
  * - Google Fonts
- * - Halftone dot background
- * - Header sunburst
+ * - Comic panel background image
  * - Pop Art hover/animation classes
  */
 export function injectGlobalWebStyles(): void {
@@ -13,17 +15,40 @@ export function injectGlobalWebStyles(): void {
   const styleId = 'pop-art-global-styles';
   if (document.getElementById(styleId)) return;
 
+  // Resolve the comic background image URI for web
+  let bgImageUrl = '';
+  if (comicBg) {
+    // Expo web resolves require() to either a string URL or an object with .uri
+    if (typeof comicBg === 'string') {
+      bgImageUrl = comicBg;
+    } else if (comicBg.uri) {
+      bgImageUrl = comicBg.uri;
+    } else if (typeof comicBg === 'number') {
+      // Metro bundler returns a number; on web, the asset resolver may give a different format
+      bgImageUrl = '';
+    }
+  }
+
+  const bgImageCss = bgImageUrl
+    ? `background-image: url("${bgImageUrl}") !important;
+      background-size: 1200px 800px !important;
+      background-repeat: repeat !important;
+      background-position: 0 0 !important;`
+    : `background-image:
+        radial-gradient(rgba(0,0,0,0.13) 25%, transparent 26%),
+        radial-gradient(rgba(0,0,0,0.13) 25%, transparent 26%) !important;
+      background-size: 22px 22px, 22px 22px !important;
+      background-position: 0 0, 11px 11px !important;`;
+
   const style = document.createElement('style');
   style.id = styleId;
   style.innerHTML = `
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Fredoka:wght@600;700&display=swap');
 
     body {
-      background-color: #FF99CC !important;
+      background-color: #FF69B4 !important;
       font-family: 'Outfit', 'Fredoka', sans-serif !important;
-      background-image: radial-gradient(rgba(0,0,0,0.15) 25%, transparent 26%), radial-gradient(rgba(0,0,0,0.15) 25%, transparent 26%) !important;
-      background-size: 28px 28px !important;
-      background-position: 0 0, 14px 14px !important;
+      ${bgImageCss}
       margin: 0 !important;
       padding: 0 !important;
       box-sizing: border-box !important;

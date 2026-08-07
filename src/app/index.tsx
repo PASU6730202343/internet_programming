@@ -180,15 +180,10 @@ export default function ProductsScreen() {
 
   const getValidImageUrl = (url?: string, itemId?: number | string): string => {
     const key = String(itemId);
-    const fallback = 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=500&auto=format&fit=crop&q=60';
+    const fallback = 'https://placehold.co/500x500/FF007F/FFFFFF.png?text=NO+IMAGE';
     if (failedImages[key]) return fallback;
     if (!url || !url.trim() || url.includes('example.com')) {
-      const defaults: Record<string, string> = {
-        '4': fallback,
-        '5': 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=500&auto=format&fit=crop&q=60',
-        '6': 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=500&auto=format&fit=crop&q=60',
-      };
-      return defaults[key] || fallback;
+      return fallback;
     }
     const trimmed = url.trim();
     if (trimmed.includes('bing.com/images/search') && trimmed.includes('mediaurl=')) {
@@ -217,7 +212,7 @@ export default function ProductsScreen() {
       {/* Top Marquee Bar */}
       <View style={styles.topMarqueeBar}>
         <Text style={styles.marqueeText}>
-          ⚡ POP ART PERFUME LAB • 100% INTENSE SCENTS • FREE EXPRESS SHIPPING ON ALL ORDERS! ⚡
+          ⚡ PASU SHOP • 100% INTENSE SCENTS • FREE EXPRESS SHIPPING ON ALL ORDERS! ⚡
         </Text>
       </View>
 
@@ -229,15 +224,15 @@ export default function ProductsScreen() {
         imageStyle={{ width: '100%', height: '100%' }}
       >
         <View style={styles.brandBadge}>
-          <Text style={styles.brandTitle}>BOOM!</Text>
-          <Text style={styles.brandSubtitle}>SCENTS</Text>
+          <Text style={styles.brandTitle}>PASU</Text>
+          <Text style={styles.brandSubtitle}>SHOP</Text>
         </View>
 
         <View style={styles.searchWrapper}>
           <Ionicons name="search" size={20} color="#000000" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search pop scents..."
+            placeholder="Search products..."
             placeholderTextColor="#666666"
             value={search}
             onChangeText={setSearch}
@@ -250,7 +245,7 @@ export default function ProductsScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.addNavBtn} onPress={openAddModal}>
             <Ionicons name="add-circle-sharp" size={20} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text style={styles.addNavBtnText}>+ ADD SCENT</Text>
+            <Text style={styles.addNavBtnText}>+ ADD PRODUCT</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -266,7 +261,7 @@ export default function ProductsScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF007F" />
-            <Text style={styles.loadingText}>LOADING POP SCENTS FROM MYSQL...</Text>
+            <Text style={styles.loadingText}>LOADING PRODUCTS FROM MYSQL...</Text>
           </View>
         ) : errorMessage && products.length === 0 ? (
           <View style={styles.errorContainer}>
@@ -298,7 +293,7 @@ export default function ProductsScreen() {
         {/* Creator Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>CREATOR</Text>
-          <Text style={styles.sectionSubtitle}>The person behind Pop Scents</Text>
+          <Text style={styles.sectionSubtitle}>The person behind PASU Shop</Text>
         </View>
         <View style={styles.reviewsGrid}>
           <View style={[styles.speechCard, { backgroundColor: '#FFE600', alignItems: 'center' }]}>
@@ -324,10 +319,10 @@ export default function ProductsScreen() {
         {/* Footer */}
         <View style={styles.footerContainer}>
           <View style={styles.footerBrand}>
-            <Text style={styles.footerTitle}>BOOM! PERFUMES</Text>
-            <Text style={styles.footerSubtitle}>Pop Art E-Commerce Powered by React Native & MySQL</Text>
+            <Text style={styles.footerTitle}>PASU SHOP</Text>
+            <Text style={styles.footerSubtitle}>E-Commerce Powered by React Native & MySQL</Text>
           </View>
-          <Text style={styles.footerCopy}>© 2026 POP ART SCENTS LAB • ALL RIGHTS RESERVED</Text>
+          <Text style={styles.footerCopy}>© 2026 PASU SHOP • ALL RIGHTS RESERVED</Text>
         </View>
       </ScrollView>
 

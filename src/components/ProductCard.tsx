@@ -32,7 +32,7 @@ export function ProductCard({
       {/* Card Header */}
       <View style={[styles.cardHeader, { backgroundColor: headerBg }]}>
         <Text style={[styles.cardHeaderBrand, isDarkHeader && { color: '#FFFFFF' }]}>
-          {item.brand || 'POP EDITION'}
+          {item.brand || 'PASU SHOP'}
         </Text>
         <View style={styles.stockBadge}>
           <Text style={styles.stockBadgeText}>STOCK: {item.stock_quantity ?? item.stock ?? 0}</Text>
@@ -44,11 +44,11 @@ export function ProductCard({
         <Image
           source={{ uri: getValidImageUrl(item.image_url || item.imageUrl, item.item_id || item.id) }}
           style={styles.cardImage}
-          resizeMode="cover"
+          resizeMode="contain"
           onError={() => onImageError(item.item_id || item.id)}
         />
         <View style={styles.starSticker}>
-          <Text style={styles.starStickerText}>POP!</Text>
+          <Text style={styles.starStickerText}>PASU</Text>
         </View>
       </View>
 

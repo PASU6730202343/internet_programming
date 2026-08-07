@@ -43,7 +43,7 @@ export function AddModal({ visible, form, isLoading, onClose, onSave, onChange }
           style={styles.modalContent}
         >
           <View style={[styles.modalHeader, { backgroundColor: '#FF007F' }]}>
-            <Text style={[styles.modalTitle, { color: '#FFFFFF' }]}>💥 ADD NEW POP SCENT</Text>
+            <Text style={[styles.modalTitle, { color: '#FFFFFF' }]}>💥 ADD NEW PRODUCT</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close-circle" size={28} color="#FFFFFF" />
             </TouchableOpacity>
@@ -141,7 +141,7 @@ export function EditModal({ visible, form, isSaving, onClose, onSave, onChange }
           style={styles.modalContent}
         >
           <View style={[styles.modalHeader, { backgroundColor: '#FFE600' }]}>
-            <Text style={styles.modalTitle}>✏ EDIT SCENT DETAILS</Text>
+            <Text style={styles.modalTitle}>✏ EDIT PRODUCT DETAILS</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close-circle" size={28} color="#000000" />
             </TouchableOpacity>
