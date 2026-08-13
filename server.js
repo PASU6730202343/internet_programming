@@ -264,10 +264,160 @@ app.delete('/api/products/:id', async (req, res) => {
   });
 });
 
+// ----------------------------------------------------
+// 5. Users Table Auto-Creation
+// ----------------------------------------------------
+async function ensureUsersTable() {
+  try {
+    const db = await getPool();
+    if (db) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          user_id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(50) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          display_name VARCHAR(100) DEFAULT '',
+          email VARCHAR(100) DEFAULT '',
+          role VARCHAR(20) DEFAULT 'member',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Users table ready');
+    }
+  } catch (err) {
+    console.warn('⚠️ Users table creation skipped:', err.message);
+  }
+
+  // Also create on remote PMA
+  const remoteSql = `CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100) DEFAULT '',
+    email VARCHAR(100) DEFAULT '',
+    role VARCHAR(20) DEFAULT 'member',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );`;
+  await executeRemotePmaSql(remoteSql);
+}
+
+// 6. POST /api/register
+app.post('/api/register', async (req, res) => {
+  const { username, password, display_name, email } = req.body;
+
+  const finalUsername = (username || '').trim();
+  const finalPassword = (password || '').trim();
+  const finalDisplayName = (display_name || finalUsername).trim();
+  const finalEmail = (email || '').trim();
+
+  if (!finalUsername) {
+    return res.status(400).json({ error: 'กรุณาระบุ Username' });
+  }
+  if (finalUsername.length < 3) {
+    return res.status(400).json({ error: 'Username ต้องมีอย่างน้อย 3 ตัวอักษร' });
+  }
+  if (!finalPassword) {
+    return res.status(400).json({ error: 'กรุณาระบุ Password' });
+  }
+  if (finalPassword.length < 4) {
+    return res.status(400).json({ error: 'Password ต้องมีอย่างน้อย 4 ตัวอักษร' });
+  }
+
+  try {
+    const db = await getPool();
+    if (db) {
+      // Check if username already exists
+      const [existing] = await db.query('SELECT user_id FROM users WHERE username = ?', [finalUsername]);
+      if (existing.length > 0) {
+        return res.status(409).json({ error: 'Username นี้ถูกใช้แล้ว กรุณาเลือก Username อื่น' });
+      }
+
+      // Insert new user
+      const [result] = await db.query(
+        'INSERT INTO users (username, password, display_name, email) VALUES (?, ?, ?, ?)',
+        [finalUsername, finalPassword, finalDisplayName, finalEmail]
+      );
+      console.log(`✅ Registered new user: ${finalUsername} (ID: ${result.insertId})`);
+
+      // Also insert on remote PMA
+      const escapedUsername = finalUsername.replace(/'/g, "''");
+      const escapedPassword = finalPassword.replace(/'/g, "''");
+      const escapedDisplayName = finalDisplayName.replace(/'/g, "''");
+      const escapedEmail = finalEmail.replace(/'/g, "''");
+      const remoteSql = `INSERT INTO users (username, password, display_name, email) VALUES ('${escapedUsername}', '${escapedPassword}', '${escapedDisplayName}', '${escapedEmail}');`;
+      await executeRemotePmaSql(remoteSql);
+
+      return res.status(201).json({
+        success: true,
+        message: 'สมัครสมาชิกสำเร็จ!',
+        user: {
+          user_id: result.insertId,
+          username: finalUsername,
+          display_name: finalDisplayName,
+          email: finalEmail,
+          role: 'member'
+        }
+      });
+    } else {
+      return res.status(500).json({ error: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้' });
+    }
+  } catch (err) {
+    console.warn('⚠️ Register failed:', err.message);
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก', details: err.message });
+  }
+});
+
+// 7. POST /api/login
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  const finalUsername = (username || '').trim();
+  const finalPassword = (password || '').trim();
+
+  if (!finalUsername || !finalPassword) {
+    return res.status(400).json({ error: 'กรุณากรอก Username และ Password' });
+  }
+
+  try {
+    const db = await getPool();
+    if (db) {
+      const [rows] = await db.query(
+        'SELECT user_id, username, display_name, email, role FROM users WHERE username = ? AND password = ?',
+        [finalUsername, finalPassword]
+      );
+
+      if (rows.length === 0) {
+        return res.status(401).json({ error: 'Username หรือ Password ไม่ถูกต้อง' });
+      }
+
+      const user = rows[0];
+      console.log(`✅ User logged in: ${user.username} (ID: ${user.user_id})`);
+
+      return res.json({
+        success: true,
+        message: 'เข้าสู่ระบบสำเร็จ!',
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          display_name: user.display_name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    } else {
+      return res.status(500).json({ error: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้' });
+    }
+  } catch (err) {
+    console.warn('⚠️ Login failed:', err.message);
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ', details: err.message });
+  }
+});
+
 app.get('/api', (req, res) => {
   res.send('API Connected with Awaited Direct PMA Bridge to http://119.59.102.161/nindamdb');
 });
 
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, '0.0.0.0', async () => {
   console.log(`🚀 API Server running on port ${port} with Awaited Direct PMA Bridge to http://119.59.102.161/nindamdb`);
+  await ensureUsersTable();
 });

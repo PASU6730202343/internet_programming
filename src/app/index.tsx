@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ImageBackground,
   Platform,
   RefreshControl,
@@ -37,6 +37,15 @@ const EMPTY_FORM: ProductForm = {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ProductsScreen() {
   const { width: screenWidth } = useWindowDimensions();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem('pasu_logged_in');
+      localStorage.removeItem('pasu_user');
+    }
+    router.replace('/login');
+  };
 
   // Responsive columns: 1 col mobile, 2 tablet, 3 medium, 4 large
   const cardColumns =
@@ -85,7 +94,7 @@ export default function ProductsScreen() {
   const closeAddModal = () => { setIsAddModalOpen(false); setIsAdding(false); };
 
   const handleSaveAdd = async () => {
-    if (!addForm.item_name.trim()) { Alert.alert('ข้อผิดพลาด', 'กรุณาระบุชื่อสินค้า'); return; }
+    if (!addForm.item_name.trim()) { alert('กรุณาระบุชื่อสินค้า'); return; }
     try {
       setIsAdding(true);
       await apiCall('/products', {
@@ -98,11 +107,11 @@ export default function ProductsScreen() {
           image_url: addForm.image_url.trim(),
         }),
       });
-      Alert.alert('สำเร็จ! 💥', 'เพิ่มสินค้าใหม่ลงในฐานข้อมูล MySQL เรียบร้อยแล้ว');
+      alert('สำเร็จ! 💥 เพิ่มสินค้าใหม่ลงในฐานข้อมูล MySQL เรียบร้อยแล้ว');
       closeAddModal();
       fetchProducts();
     } catch (error: any) {
-      Alert.alert('เกิดข้อผิดพลาด', error?.message || 'ไม่สามารถเพิ่มสินค้าได้');
+      alert(error?.message || 'ไม่สามารถเพิ่มสินค้าได้');
     } finally {
       setIsAdding(false);
     }
@@ -125,8 +134,7 @@ export default function ProductsScreen() {
     if (!editingItem) return;
     const productId = editingItem.item_id || editingItem.id;
     if (!editForm.item_name.trim()) {
-      const msg = 'กรุณาระบุชื่อสินค้า';
-      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('ข้อผิดพลาด', msg);
+      alert('กรุณาระบุชื่อสินค้า');
       return;
     }
     try {
@@ -144,33 +152,20 @@ export default function ProductsScreen() {
       closeEditModal();
       await fetchProducts();
     } catch (error: any) {
-      const msg = error?.message || 'ไม่สามารถแก้ไขสินค้าได้';
-      Platform.OS === 'web' ? window.alert('เกิดข้อผิดพลาด: ' + msg) : Alert.alert('เกิดข้อผิดพลาด', msg);
+      alert(error?.message || 'ไม่สามารถแก้ไขสินค้าได้');
     } finally {
       setIsSaving(false);
     }
   };
 
   // ── Delete handler ─────────────────────────────────────────────────────────
-  const handleDeleteProduct = (item: any) => {
+  const handleDeleteProduct = async (item: any) => {
     const productId = item.item_id || item.id;
-    const productName = item.item_name || item.name || 'สินค้า';
-    const doDelete = async () => {
-      try {
-        const res = await apiCall(`/products/${productId}`, { method: 'DELETE' });
-        if (res?.success) alert('ลบสินค้าจากฐานข้อมูลเรียบร้อยแล้ว');
-        fetchProducts();
-      } catch (error: any) {
-        alert(error?.message || 'ไม่สามารถลบสินค้าได้');
-      }
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm(`ต้องการลบ "${productName}" หรือไม่?`)) doDelete();
-    } else {
-      Alert.alert('ยืนยันการลบสินค้า', `ต้องการลบ "${productName}" หรือไม่?`, [
-        { text: 'ยกเลิก', style: 'cancel' },
-        { text: 'ลบสินค้า', style: 'destructive', onPress: doDelete },
-      ]);
+    try {
+      await apiCall(`/products/${productId}`, { method: 'DELETE' });
+      fetchProducts();
+    } catch (error: any) {
+      alert(error?.message || 'ไม่สามารถลบสินค้าได้');
     }
   };
 
@@ -197,11 +192,38 @@ export default function ProductsScreen() {
     return trimmed;
   };
 
-  // ── Filter products ────────────────────────────────────────────────────────
+  // ── Filter products (name/brand + price ±10%) ──────────────────────────────
   const filteredProducts = products.filter((item) => {
+    const searchTerm = search.trim();
+    if (!searchTerm) return true;
+
     const name = (item.item_name || item.name || item.product_name || '').toLowerCase();
     const brand = (item.brand || item.category || '').toLowerCase();
-    return name.includes(search.toLowerCase()) || brand.includes(search.toLowerCase());
+    const itemPrice = Number(item.price ?? 0);
+
+    // Extract number from search (e.g. "500", "น้ำหอม 1200")
+    const priceMatch = searchTerm.match(/(\d+(\.\d+)?)/);
+    const searchPrice = priceMatch ? parseFloat(priceMatch[1]) : null;
+
+    // Extract text part (remove the number)
+    const textPart = searchTerm.replace(/(\d+(\.\d+)?)/g, '').trim().toLowerCase();
+
+    // Text match (name or brand)
+    const textMatches = textPart
+      ? name.includes(textPart) || brand.includes(textPart)
+      : true;
+
+    // Price match (±10%)
+    const priceMatches = searchPrice !== null
+      ? itemPrice >= searchPrice * 0.9 && itemPrice <= searchPrice * 1.1
+      : true;
+
+    // If user typed only a number → filter by price only
+    if (searchPrice !== null && !textPart) return priceMatches;
+    // If user typed only text → filter by text only
+    if (!searchPrice && textPart) return textMatches;
+    // If user typed both (e.g. "น้ำหอม 500") → both must match
+    return textMatches && priceMatches;
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -232,7 +254,7 @@ export default function ProductsScreen() {
           <Ionicons name="search" size={20} color="#000000" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder="ค้นหาชื่อ หรือ ราคา (±10%)..."
             placeholderTextColor="#666666"
             value={search}
             onChangeText={setSearch}
@@ -246,6 +268,9 @@ export default function ProductsScreen() {
           <TouchableOpacity style={styles.addNavBtn} onPress={openAddModal}>
             <Ionicons name="add-circle-sharp" size={20} color="#FFFFFF" style={{ marginRight: 4 }} />
             <Text style={styles.addNavBtnText}>+ ADD PRODUCT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#FF007F' }]} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </ImageBackground>
