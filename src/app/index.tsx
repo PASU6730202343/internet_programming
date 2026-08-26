@@ -329,13 +329,13 @@ export default function ProductsScreen() {
               letterSpacing: '3px',
               fontFamily: "'Press Start 2P', monospace",
             } as any}>
-              ⛏ MINE YOUR BEST DEALS &nbsp;•&nbsp; FREE DELIVERY TO ALL BIOMES! &nbsp;⛏&nbsp;
-              MINE YOUR BEST DEALS &nbsp;•&nbsp; FREE DELIVERY TO ALL BIOMES! &nbsp;⛏
+              ⛏ INTERNET PROGRAMMING &nbsp;•&nbsp; PASU PERYRUTHAI &nbsp;⛏&nbsp;
+              INTERNET PROGRAMMING &nbsp;•&nbsp; PASU PERYRUTHAI &nbsp;⛏
             </div>
           </div>
         ) : (
           <Text style={styles.marqueeText}>
-            ⛏ MINE YOUR BEST DEALS • FREE DELIVERY TO ALL BIOMES! ⛏
+            ⛏ INTERNET PROGRAMMING • PASU PERYRUTHAI ⛏
           </Text>
         )}
       </View>
@@ -367,14 +367,6 @@ export default function ProductsScreen() {
 
         {/* Header Actions */}
         <View style={styles.headerActions}>
-          {/* Coin Badge */}
-          <View style={styles.coinBadge}>
-            <View style={styles.coinIcon} />
-            <Text style={styles.coinText}>
-              {products.reduce((sum, p) => sum + Number(p.price ?? 0), 0).toLocaleString()}
-            </Text>
-          </View>
-
           <TouchableOpacity style={styles.addNavBtn} onPress={openAddModal}>
             <Ionicons name="add-circle-sharp" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
             <Text style={styles.addNavBtnText}>+ CRAFT ITEM</Text>

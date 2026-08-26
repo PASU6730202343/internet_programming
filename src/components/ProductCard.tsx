@@ -22,7 +22,6 @@ export function ProductCard({
   onImageError,
   onEdit,
   onDelete,
-  onAddToCart,
 }: ProductCardProps) {
   const stock = item.stock_quantity ?? item.stock ?? 0;
 
@@ -77,17 +76,10 @@ export function ProductCard({
           {item.brand || 'PASU SHOP'}
         </Text>
 
-        {/* Star rating row */}
-        <View style={styles.cardStarRow}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Ionicons key={s} name="star" size={14} color="#FFD700" />
-          ))}
-        </View>
-
         {/* Divider */}
         <View style={styles.cardDivider} />
 
-        {/* Price + Add to Cart Row */}
+        {/* Price Row */}
         <View style={styles.cardBottomRow}>
           <View style={styles.cardPriceSection}>
             <View style={{
@@ -98,14 +90,6 @@ export function ProductCard({
               {Number(item.price ?? 0).toLocaleString()}
             </Text>
           </View>
-
-          {/* Add to Cart Button */}
-          <TouchableOpacity
-            style={styles.addToCartBtn}
-            onPress={() => onAddToCart ? onAddToCart(item) : onEdit(item)}
-          >
-            <Ionicons name="cart" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
 
         {/* Stock badge */}
