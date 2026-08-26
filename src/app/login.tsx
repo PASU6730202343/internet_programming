@@ -72,12 +72,12 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={loginStyles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF007F" />
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A1A" />
 
       {/* Top accent bar */}
       <View style={loginStyles.topBar}>
         <Text style={loginStyles.topBarText}>
-          ⚡ PASU SHOP — MEMBER LOGIN ⚡
+          ⛏ PASU SHOP — ENTER THE WORLD ⛏
         </Text>
       </View>
 
@@ -114,7 +114,7 @@ export default function LoginScreen() {
               {/* Error Message */}
               {errorMsg ? (
                 <View style={loginStyles.errorBox}>
-                  <Ionicons name="alert-circle" size={18} color="#FF007F" />
+                  <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
                   <Text style={loginStyles.errorText}>{errorMsg}</Text>
                 </View>
               ) : null}
@@ -122,7 +122,7 @@ export default function LoginScreen() {
               {/* Username */}
               <Text style={loginStyles.fieldLabel}>USERNAME</Text>
               <View style={loginStyles.inputWrapper}>
-                <Ionicons name="person" size={18} color="#FF007F" style={{ marginRight: 8 }} />
+                <Ionicons name="person" size={18} color="#c8a84e" style={{ marginRight: 8 }} />
                 <TextInput
                   style={loginStyles.textInput}
                   placeholder="กรอก Username..."
@@ -137,7 +137,7 @@ export default function LoginScreen() {
               {/* Password */}
               <Text style={loginStyles.fieldLabel}>PASSWORD</Text>
               <View style={loginStyles.inputWrapper}>
-                <Ionicons name="lock-closed" size={18} color="#FF007F" style={{ marginRight: 8 }} />
+                <Ionicons name="lock-closed" size={18} color="#c8a84e" style={{ marginRight: 8 }} />
                 <TextInput
                   style={loginStyles.textInput}
                   placeholder="กรอก Password..."
@@ -183,7 +183,7 @@ export default function LoginScreen() {
                 style={loginStyles.registerBtn}
                 onPress={() => router.push('/register')}
               >
-                <Ionicons name="person-add-outline" size={18} color="#FF007F" style={{ marginRight: 8 }} />
+                <Ionicons name="person-add-outline" size={18} color="#c8a84e" style={{ marginRight: 8 }} />
                 <Text style={loginStyles.registerBtnText}>สมัครสมาชิกใหม่</Text>
               </TouchableOpacity>
             </View>

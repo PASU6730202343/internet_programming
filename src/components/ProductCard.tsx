@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import styles from '../styles/popArt.styles';
 
 interface ProductCardProps {
@@ -11,9 +11,8 @@ interface ProductCardProps {
   onImageError: (id: string | number) => void;
   onEdit: (item: any) => void;
   onDelete: (item: any) => void;
+  onAddToCart?: (item: any) => void;
 }
-
-const CARD_COLORS = ['#FFE600', '#00F0FF', '#FF007F', '#00FF66', '#FF5500'];
 
 export function ProductCard({
   item,
@@ -23,59 +22,121 @@ export function ProductCard({
   onImageError,
   onEdit,
   onDelete,
+  onAddToCart,
 }: ProductCardProps) {
-  const headerBg = CARD_COLORS[index % CARD_COLORS.length];
-  const isDarkHeader = headerBg === '#FF007F' || headerBg === '#FF5500';
+  const stock = item.stock_quantity ?? item.stock ?? 0;
 
-  return (
+  // Web-only: wrap card in a div with hover class
+  const cardContent = (
     <View style={[styles.productCard, { width: cardWidth }]}>
-      {/* Card Header */}
-      <View style={[styles.cardHeader, { backgroundColor: headerBg }]}>
-        <Text style={[styles.cardHeaderBrand, isDarkHeader && { color: '#FFFFFF' }]}>
-          {item.brand || 'PASU SHOP'}
-        </Text>
-        <View style={styles.stockBadge}>
-          <Text style={styles.stockBadgeText}>STOCK: {item.stock_quantity ?? item.stock ?? 0}</Text>
-        </View>
-      </View>
+      {/* Admin Overlay (edit/delete) — visible on hover via CSS */}
+      {Platform.OS === 'web' && (
+        <div className="card-admin-overlay" style={{
+          position: 'absolute', top: 8, right: 8,
+          display: 'flex', gap: '4px', zIndex: 5,
+        } as any}>
+          <TouchableOpacity
+            style={styles.adminBtn}
+            onPress={() => onEdit(item)}
+          >
+            <Ionicons name="construct" size={14} color="#c8a84e" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.adminBtn, styles.adminDeleteBtn]}
+            onPress={() => onDelete(item)}
+          >
+            <Ionicons name="trash" size={14} color="#ff6b6b" />
+          </TouchableOpacity>
+        </div>
+      )}
 
       {/* Product Image */}
       <View style={styles.cardImageWrapper}>
+        {Platform.OS === 'web' && (
+          <div className="card-image-deco" style={{
+            position: 'absolute', inset: 0,
+          } as any} />
+        )}
         <Image
           source={{ uri: getValidImageUrl(item.image_url || item.imageUrl, item.item_id || item.id) }}
           style={styles.cardImage}
           resizeMode="contain"
           onError={() => onImageError(item.item_id || item.id)}
         />
-        <View style={styles.starSticker}>
-          <Text style={styles.starStickerText}>PASU</Text>
-        </View>
       </View>
 
       {/* Card Body */}
       <View style={styles.cardBody}>
+        {/* Product Name */}
         <Text style={styles.productTitle} numberOfLines={2}>
           {item.item_name || item.name}
         </Text>
 
-        <View style={styles.priceRow}>
-          <View style={styles.priceTag}>
-            <Text style={styles.priceTagText}>฿{Number(item.price ?? 0).toLocaleString()}</Text>
-          </View>
+        {/* Brand / Category */}
+        <Text style={styles.cardBrandText}>
+          {item.brand || 'PASU SHOP'}
+        </Text>
+
+        {/* Star rating row */}
+        <View style={styles.cardStarRow}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Ionicons key={s} name="star" size={14} color="#FFD700" />
+          ))}
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.cardActionRow}>
-          <TouchableOpacity style={styles.editBtn} onPress={() => onEdit(item)}>
-            <Ionicons name="pencil" size={14} color="#000000" style={{ marginRight: 4 }} />
-            <Text style={styles.editBtnText}>EDIT</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => onDelete(item)}>
-            <Ionicons name="trash-outline" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text style={styles.deleteBtnText}>DELETE</Text>
+        {/* Divider */}
+        <View style={styles.cardDivider} />
+
+        {/* Price + Add to Cart Row */}
+        <View style={styles.cardBottomRow}>
+          <View style={styles.cardPriceSection}>
+            <View style={{
+              width: 16, height: 16, borderRadius: 8,
+              backgroundColor: '#FFD700', borderWidth: 2, borderColor: '#B8860B',
+            }} />
+            <Text style={styles.cardPriceText}>
+              {Number(item.price ?? 0).toLocaleString()}
+            </Text>
+          </View>
+
+          {/* Add to Cart Button */}
+          <TouchableOpacity
+            style={styles.addToCartBtn}
+            onPress={() => onAddToCart ? onAddToCart(item) : onEdit(item)}
+          >
+            <Ionicons name="cart" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+
+        {/* Stock badge */}
+        <View style={styles.cardStockBadge}>
+          <Ionicons name="cube-outline" size={10} color="#8b7a45" />
+          <Text style={styles.cardStockText}>STOCK: {stock}</Text>
+        </View>
       </View>
+
+      {/* Native: show edit/delete as regular buttons */}
+      {Platform.OS !== 'web' && (
+        <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingBottom: 14 }}>
+          <TouchableOpacity style={[styles.cardActionBtn, { flex: 1, alignItems: 'center' as const }]} onPress={() => onEdit(item)}>
+            <Ionicons name="construct" size={14} color="#c8a84e" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.cardActionBtn, styles.cardDeleteBtn, { flex: 1, alignItems: 'center' as const }]} onPress={() => onDelete(item)}>
+            <Ionicons name="trash" size={14} color="#ff6b6b" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
+
+  // On web, wrap in a div with hover class
+  if (Platform.OS === 'web') {
+    return (
+      <div className="pop-card-hover" style={{ position: 'relative' } as any}>
+        {cardContent}
+      </div>
+    );
+  }
+
+  return cardContent;
 }

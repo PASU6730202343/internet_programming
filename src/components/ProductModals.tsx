@@ -42,10 +42,10 @@ export function AddModal({ visible, form, isLoading, onClose, onSave, onChange }
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalContent}
         >
-          <View style={[styles.modalHeader, { backgroundColor: '#FF007F' }]}>
-            <Text style={[styles.modalTitle, { color: '#FFFFFF' }]}>💥 ADD NEW PRODUCT</Text>
+          <View style={[styles.modalHeader, { backgroundColor: '#3d6b35' }]}>
+            <Text style={[styles.modalTitle, { color: '#7fff00' }]}>⛏ CRAFT NEW ITEM</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close-circle" size={28} color="#FFFFFF" />
+              <Ionicons name="close-circle" size={28} color="#c8a84e" />
             </TouchableOpacity>
           </View>
 
@@ -140,10 +140,10 @@ export function EditModal({ visible, form, isSaving, onClose, onSave, onChange }
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalContent}
         >
-          <View style={[styles.modalHeader, { backgroundColor: '#FFE600' }]}>
-            <Text style={styles.modalTitle}>✏ EDIT PRODUCT DETAILS</Text>
+          <View style={[styles.modalHeader, { backgroundColor: '#8b6914' }]}>
+            <Text style={styles.modalTitle}>✏ EDIT PRODUCT</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close-circle" size={28} color="#000000" />
+              <Ionicons name="close-circle" size={28} color="#c8a84e" />
             </TouchableOpacity>
           </View>
 

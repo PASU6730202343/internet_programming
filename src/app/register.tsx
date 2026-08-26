@@ -88,12 +88,12 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={registerStyles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#00A8CC" />
+      <StatusBar barStyle="light-content" backgroundColor="#0f0a06" />
 
       {/* Top accent bar */}
       <View style={registerStyles.topBar}>
         <Text style={registerStyles.topBarText}>
-          ⚡ PASU SHOP — สมัครสมาชิก ⚡
+          ⛏ PASU SHOP — CREATE NEW PLAYER ⛏
         </Text>
       </View>
 
@@ -129,7 +129,7 @@ export default function RegisterScreen() {
               {/* Error Message */}
               {errorMsg ? (
                 <View style={registerStyles.errorBox}>
-                  <Ionicons name="alert-circle" size={18} color="#FF007F" />
+                  <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
                   <Text style={registerStyles.errorText}>{errorMsg}</Text>
                 </View>
               ) : null}
@@ -137,7 +137,7 @@ export default function RegisterScreen() {
               {/* Success Message */}
               {successMsg ? (
                 <View style={registerStyles.successBox}>
-                  <Ionicons name="checkmark-circle" size={18} color="#00CC66" />
+                  <Ionicons name="checkmark-circle" size={18} color="#7fff00" />
                   <Text style={registerStyles.successText}>{successMsg}</Text>
                 </View>
               ) : null}
@@ -145,7 +145,7 @@ export default function RegisterScreen() {
               {/* Username */}
               <Text style={registerStyles.fieldLabel}>USERNAME *</Text>
               <View style={registerStyles.inputWrapper}>
-                <Ionicons name="person" size={18} color="#00A8CC" style={{ marginRight: 8 }} />
+                <Ionicons name="person" size={18} color="#4aedd9" style={{ marginRight: 8 }} />
                 <TextInput
                   style={registerStyles.textInput}
                   placeholder="ตั้ง Username (อย่างน้อย 3 ตัว)..."
@@ -160,7 +160,7 @@ export default function RegisterScreen() {
               {/* Display Name */}
               <Text style={registerStyles.fieldLabel}>ชื่อที่แสดง</Text>
               <View style={registerStyles.inputWrapper}>
-                <Ionicons name="text" size={18} color="#00A8CC" style={{ marginRight: 8 }} />
+                <Ionicons name="text" size={18} color="#4aedd9" style={{ marginRight: 8 }} />
                 <TextInput
                   style={registerStyles.textInput}
                   placeholder="ชื่อที่ต้องการแสดง (ไม่บังคับ)..."
@@ -173,7 +173,7 @@ export default function RegisterScreen() {
               {/* Email */}
               <Text style={registerStyles.fieldLabel}>EMAIL</Text>
               <View style={registerStyles.inputWrapper}>
-                <Ionicons name="mail" size={18} color="#00A8CC" style={{ marginRight: 8 }} />
+                <Ionicons name="mail" size={18} color="#4aedd9" style={{ marginRight: 8 }} />
                 <TextInput
                   style={registerStyles.textInput}
                   placeholder="อีเมล (ไม่บังคับ)..."
@@ -188,7 +188,7 @@ export default function RegisterScreen() {
               {/* Password */}
               <Text style={registerStyles.fieldLabel}>PASSWORD *</Text>
               <View style={registerStyles.inputWrapper}>
-                <Ionicons name="lock-closed" size={18} color="#00A8CC" style={{ marginRight: 8 }} />
+                <Ionicons name="lock-closed" size={18} color="#4aedd9" style={{ marginRight: 8 }} />
                 <TextInput
                   style={registerStyles.textInput}
                   placeholder="ตั้ง Password (อย่างน้อย 4 ตัว)..."
@@ -209,7 +209,7 @@ export default function RegisterScreen() {
               {/* Confirm Password */}
               <Text style={registerStyles.fieldLabel}>ยืนยัน PASSWORD *</Text>
               <View style={registerStyles.inputWrapper}>
-                <Ionicons name="lock-closed" size={18} color="#00A8CC" style={{ marginRight: 8 }} />
+                <Ionicons name="lock-closed" size={18} color="#4aedd9" style={{ marginRight: 8 }} />
                 <TextInput
                   style={registerStyles.textInput}
                   placeholder="กรอก Password อีกครั้ง..."
@@ -248,7 +248,7 @@ export default function RegisterScreen() {
                 style={registerStyles.loginLinkBtn}
                 onPress={() => router.replace('/login')}
               >
-                <Ionicons name="log-in-outline" size={18} color="#FF007F" style={{ marginRight: 8 }} />
+                <Ionicons name="log-in-outline" size={18} color="#c8a84e" style={{ marginRight: 8 }} />
                 <Text style={registerStyles.loginLinkText}>มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</Text>
               </TouchableOpacity>
             </View>
