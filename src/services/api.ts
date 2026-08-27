@@ -49,3 +49,34 @@ export const apiCall = async (endpoint: string, options: any = {}) => {
   console.warn('⚠️ Could not connect to API server on any configured endpoints.');
   throw lastError || new Error('Failed to connect to backend server. Please make sure node server.js is running.');
 };
+
+// อัปโหลดไฟล์รูปภาพจริง (multipart/form-data) แล้วได้ URL กลับมาใช้แทนการพิมพ์ URL เอง
+export const uploadImage = async (
+  file: Blob | { uri: string; name: string; type: string }
+): Promise<{ success: boolean; url: string }> => {
+  const baseUrls = getBaseUrls();
+  let lastError: any = null;
+
+  for (const baseUrl of baseUrls) {
+    try {
+      const formData = new FormData();
+      formData.append('image', file as any);
+
+      const response = await fetch(`${baseUrl}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => null);
+        throw new Error(errBody?.error || `HTTP Error Status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('ไม่สามารถอัปโหลดรูปภาพได้');
+};

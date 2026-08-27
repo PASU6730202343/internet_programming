@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -11,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { uploadImage } from '../services/api';
 import styles from '../styles/popArt.styles';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -21,6 +24,125 @@ export interface ProductForm {
   stock_quantity: string;
   brand: string;
   image_url: string;
+  image_path: string;
+}
+
+// ─── Image Field (image_url แบบพิมพ์เอง + image_path แบบอัปโหลดไฟล์จริง) ──────
+
+interface ImageFieldProps {
+  urlValue: string;
+  onUrlChange: (url: string) => void;
+  pathValue: string;
+  onPathChange: (path: string) => void;
+}
+
+function ImageField({ urlValue, onUrlChange, pathValue, onPathChange }: ImageFieldProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const doUpload = async (file: Blob | { uri: string; name: string; type: string }) => {
+    try {
+      setIsUploading(true);
+      const result = await uploadImage(file);
+      onPathChange(result.url);
+    } catch (error: any) {
+      alert(error?.message || 'ไม่สามารถอัปโหลดรูปภาพได้');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const pickImage = async () => {
+    if (Platform.OS === 'web') {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert('กรุณาอนุญาตการเข้าถึงรูปภาพเพื่ออัปโหลด');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    const filename = asset.uri.split('/').pop() || `photo-${Date.now()}.jpg`;
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const type = asset.mimeType || (ext ? `image/${ext === 'jpg' ? 'jpeg' : ext}` : 'image/jpeg');
+
+    await doUpload({ uri: asset.uri, name: filename, type });
+  };
+
+  const handleWebFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) doUpload(file);
+    e.target.value = '';
+  };
+
+  return (
+    <>
+      <Text style={styles.fieldLabel}>IMAGE URL</Text>
+      <TextInput
+        style={styles.textInput}
+        value={urlValue}
+        onChangeText={onUrlChange}
+        placeholder="https://images.unsplash.com/..."
+        placeholderTextColor="#999999"
+      />
+
+      <Text style={styles.fieldLabel}>UPLOAD IMAGE FILE</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <TextInput
+          style={[styles.textInput, { flex: 1 }]}
+          value={pathValue}
+          onChangeText={onPathChange}
+          placeholder="เลือกไฟล์รูปภาพจากเครื่อง..."
+          placeholderTextColor="#999999"
+        />
+        <TouchableOpacity
+          onPress={pickImage}
+          disabled={isUploading}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 8,
+            backgroundColor: '#3d6b35',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {isUploading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="image" size={20} color="#7fff00" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {Platform.OS === 'web' && (
+        <input
+          ref={fileInputRef as any}
+          type="file"
+          accept="image/*"
+          onChange={handleWebFileChange as any}
+          style={{ display: 'none' } as any}
+        />
+      )}
+
+      {!!(pathValue || urlValue) && (
+        <Image
+          source={{ uri: pathValue || urlValue }}
+          style={{ width: 64, height: 64, borderRadius: 8, marginTop: 8 }}
+          resizeMode="cover"
+        />
+      )}
+    </>
+  );
 }
 
 // ─── Add Product Modal ────────────────────────────────────────────────────────
@@ -93,13 +215,11 @@ export function AddModal({ visible, form, isLoading, onClose, onSave, onChange }
               placeholderTextColor="#999999"
             />
 
-            <Text style={styles.fieldLabel}>IMAGE URL</Text>
-            <TextInput
-              style={styles.textInput}
-              value={form.image_url}
-              onChangeText={(t) => onChange('image_url', t)}
-              placeholder="https://images.unsplash.com/..."
-              placeholderTextColor="#999999"
+            <ImageField
+              urlValue={form.image_url}
+              onUrlChange={(url) => onChange('image_url', url)}
+              pathValue={form.image_path}
+              onPathChange={(path) => onChange('image_path', path)}
             />
           </ScrollView>
 
@@ -191,13 +311,11 @@ export function EditModal({ visible, form, isSaving, onClose, onSave, onChange }
               placeholderTextColor="#999999"
             />
 
-            <Text style={styles.fieldLabel}>IMAGE URL</Text>
-            <TextInput
-              style={styles.textInput}
-              value={form.image_url}
-              onChangeText={(t) => onChange('image_url', t)}
-              placeholder="https://..."
-              placeholderTextColor="#999999"
+            <ImageField
+              urlValue={form.image_url}
+              onUrlChange={(url) => onChange('image_url', url)}
+              pathValue={form.image_path}
+              onPathChange={(path) => onChange('image_path', path)}
             />
           </ScrollView>
 

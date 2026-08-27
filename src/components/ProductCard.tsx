@@ -57,7 +57,7 @@ export function ProductCard({
           } as any} />
         )}
         <Image
-          source={{ uri: getValidImageUrl(item.image_url || item.imageUrl, item.item_id || item.id) }}
+          source={{ uri: getValidImageUrl(item.image_path || item.image_url || item.imageUrl, item.item_id || item.id) }}
           style={styles.cardImage}
           resizeMode="contain"
           onError={() => onImageError(item.item_id || item.id)}

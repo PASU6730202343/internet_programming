@@ -14,6 +14,7 @@ const mysql = require('mysql2/promise');
         \`stock_quantity\` int(11) DEFAULT 0,
         \`price\` decimal(10,2) DEFAULT 0.00,
         \`image_url\` text DEFAULT NULL,
+        \`image_path\` varchar(255) DEFAULT NULL,
         \`created_at\` timestamp NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (\`item_id\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

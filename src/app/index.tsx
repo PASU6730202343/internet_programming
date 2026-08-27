@@ -40,6 +40,7 @@ const EMPTY_FORM: ProductForm = {
   stock_quantity: '',
   brand: '',
   image_url: '',
+  image_path: '',
 };
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -128,6 +129,7 @@ export default function ProductsScreen() {
           stock_quantity: parseInt(addForm.stock_quantity, 10) || 0,
           brand: addForm.brand.trim(),
           image_url: addForm.image_url.trim(),
+          image_path: addForm.image_path.trim(),
         }),
       });
       alert('สำเร็จ! ⛏ เพิ่มสินค้าใหม่ลงในฐานข้อมูล MySQL เรียบร้อยแล้ว');
@@ -149,6 +151,7 @@ export default function ProductsScreen() {
       stock_quantity: String(item.stock_quantity ?? item.stock ?? 0),
       brand: item.brand || item.category || '',
       image_url: item.image_url || item.imageUrl || '',
+      image_path: item.image_path || '',
     });
   };
   const closeEditModal = () => { setEditingItem(null); setIsSaving(false); };
@@ -170,6 +173,7 @@ export default function ProductsScreen() {
           stock_quantity: parseInt(editForm.stock_quantity, 10) || 0,
           brand: editForm.brand.trim(),
           image_url: editForm.image_url.trim(),
+          image_path: editForm.image_path.trim(),
         }),
       });
       closeEditModal();

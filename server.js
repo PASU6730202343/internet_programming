@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3034;
@@ -14,6 +17,47 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ----------------------------------------------------
+// Image upload (multer) — stores files on disk under /uploads
+// and serves them statically so they can be used as image_url values
+// ----------------------------------------------------
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('อนุญาตเฉพาะไฟล์รูปภาพเท่านั้น'));
+    }
+    cb(null, true);
+  },
+});
+
+app.post('/api/upload', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'ไม่พบไฟล์รูปภาพที่อัปโหลด' });
+    }
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    return res.status(201).json({ success: true, url: fileUrl });
+  });
+});
 
 // ----------------------------------------------------
 // 1. Connection Pool targeting Localhost MySQL
@@ -140,13 +184,14 @@ app.get('/api/products', async (req, res) => {
 
 // 2. POST /api/products
 app.post('/api/products', async (req, res) => {
-  const { item_name, name, price, stock_quantity, stock, brand, category, image_url, imageUrl } = req.body;
+  const { item_name, name, price, stock_quantity, stock, brand, category, image_url, imageUrl, image_path } = req.body;
 
   const finalName = (item_name || name || '').trim();
   const finalPrice = price !== undefined ? Number(price) : 0;
   const finalStock = stock_quantity !== undefined ? Number(stock_quantity) : (stock !== undefined ? Number(stock) : 0);
   const finalBrand = (brand || category || '').trim();
   const finalImage = (image_url || imageUrl || '').trim();
+  const finalImagePath = (image_path || '').trim();
 
   if (!finalName) {
     return res.status(400).json({ error: 'กรุณาระบุชื่อสินค้า (item_name is required)' });
@@ -157,8 +202,8 @@ app.post('/api/products', async (req, res) => {
     const db = await getPool();
     if (db) {
       const [result] = await db.query(
-        'INSERT INTO inventory (item_name, brand, stock_quantity, price, image_url) VALUES (?, ?, ?, ?, ?)',
-        [finalName, finalBrand, finalStock, finalPrice, finalImage]
+        'INSERT INTO inventory (item_name, brand, stock_quantity, price, image_url, image_path) VALUES (?, ?, ?, ?, ?, ?)',
+        [finalName, finalBrand, finalStock, finalPrice, finalImage, finalImagePath]
       );
       insertedId = result.insertId;
       console.log(`✅ Inserted product into DB with ID ${insertedId}`);
@@ -171,7 +216,8 @@ app.post('/api/products', async (req, res) => {
   const escapedName = finalName.replace(/'/g, "''");
   const escapedBrand = finalBrand.replace(/'/g, "''");
   const escapedImage = finalImage.replace(/'/g, "''");
-  const remoteInsertSql = `INSERT INTO inventory (item_name, brand, stock_quantity, price, image_url) VALUES ('${escapedName}', '${escapedBrand}', ${finalStock}, ${finalPrice}, '${escapedImage}');`;
+  const escapedImagePath = finalImagePath.replace(/'/g, "''");
+  const remoteInsertSql = `INSERT INTO inventory (item_name, brand, stock_quantity, price, image_url, image_path) VALUES ('${escapedName}', '${escapedBrand}', ${finalStock}, ${finalPrice}, '${escapedImage}', '${escapedImagePath}');`;
   await executeRemotePmaSql(remoteInsertSql);
 
   return res.status(201).json({
@@ -184,7 +230,8 @@ app.post('/api/products', async (req, res) => {
       brand: finalBrand,
       stock_quantity: finalStock,
       price: finalPrice,
-      image_url: finalImage
+      image_url: finalImage,
+      image_path: finalImagePath
     }
   });
 });
@@ -192,13 +239,14 @@ app.post('/api/products', async (req, res) => {
 // 3. PUT /api/products/:id
 app.put('/api/products/:id', async (req, res) => {
   const productId = Number(req.params.id);
-  const { item_name, name, price, stock_quantity, stock, brand, category, image_url, imageUrl } = req.body;
+  const { item_name, name, price, stock_quantity, stock, brand, category, image_url, imageUrl, image_path } = req.body;
 
   const finalName = (item_name || name || '').trim();
   const finalPrice = price !== undefined ? Number(price) : 0;
   const finalStock = stock_quantity !== undefined ? Number(stock_quantity) : (stock !== undefined ? Number(stock) : 0);
   const finalBrand = (brand || category || '').trim();
   const finalImage = (image_url || imageUrl || '').trim();
+  const finalImagePath = (image_path || '').trim();
 
   if (!finalName) {
     return res.status(400).json({ error: 'กรุณาระบุชื่อสินค้า (item_name is required)' });
@@ -208,8 +256,8 @@ app.put('/api/products/:id', async (req, res) => {
     const db = await getPool();
     if (db) {
       await db.query(
-        'UPDATE inventory SET item_name = ?, brand = ?, stock_quantity = ?, price = ?, image_url = ? WHERE item_id = ?',
-        [finalName, finalBrand, finalStock, finalPrice, finalImage, productId]
+        'UPDATE inventory SET item_name = ?, brand = ?, stock_quantity = ?, price = ?, image_url = ?, image_path = ? WHERE item_id = ?',
+        [finalName, finalBrand, finalStock, finalPrice, finalImage, finalImagePath, productId]
       );
       console.log(`✅ Updated product ID ${productId} in DB`);
     }
@@ -221,7 +269,8 @@ app.put('/api/products/:id', async (req, res) => {
   const escapedName = finalName.replace(/'/g, "''");
   const escapedBrand = finalBrand.replace(/'/g, "''");
   const escapedImage = finalImage.replace(/'/g, "''");
-  const remoteUpdateSql = `UPDATE inventory SET item_name = '${escapedName}', brand = '${escapedBrand}', stock_quantity = ${finalStock}, price = ${finalPrice}, image_url = '${escapedImage}' WHERE item_id = ${productId};`;
+  const escapedImagePath = finalImagePath.replace(/'/g, "''");
+  const remoteUpdateSql = `UPDATE inventory SET item_name = '${escapedName}', brand = '${escapedBrand}', stock_quantity = ${finalStock}, price = ${finalPrice}, image_url = '${escapedImage}', image_path = '${escapedImagePath}' WHERE item_id = ${productId};`;
   await executeRemotePmaSql(remoteUpdateSql);
 
   return res.json({
@@ -234,7 +283,8 @@ app.put('/api/products/:id', async (req, res) => {
       brand: finalBrand,
       stock_quantity: finalStock,
       price: finalPrice,
-      image_url: finalImage
+      image_url: finalImage,
+      image_path: finalImagePath
     }
   });
 });
