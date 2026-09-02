@@ -11,7 +11,6 @@ interface ProductCardProps {
   onImageError: (id: string | number) => void;
   onEdit: (item: any) => void;
   onDelete: (item: any) => void;
-  onAddToCart?: (item: any) => void;
 }
 
 export function ProductCard({

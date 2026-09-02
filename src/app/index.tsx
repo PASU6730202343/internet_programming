@@ -24,15 +24,6 @@ import { injectGlobalWebStyles } from '../utils/injectWebStyles';
 // Inject CSS on web
 injectGlobalWebStyles();
 
-// ─── Category definitions ─────────────────────────────────────────────────────
-const CATEGORIES = [
-  { key: 'all', label: 'ALL ITEMS', icon: 'grid' as const },
-  { key: 'best', label: 'BEST SELLER', icon: 'flame' as const },
-  { key: 'new', label: 'NEW ARRIVAL', icon: 'star' as const },
-  { key: 'perfume', label: 'PERFUME', icon: 'water' as const },
-  { key: 'discount', label: 'DISCOUNT', icon: 'pricetag' as const },
-];
-
 // ─── Default form state ───────────────────────────────────────────────────────
 const EMPTY_FORM: ProductForm = {
   item_name: '',
@@ -47,7 +38,6 @@ const EMPTY_FORM: ProductForm = {
 export default function ProductsScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const router = useRouter();
-  const isWide = screenWidth >= 768;
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -57,8 +47,8 @@ export default function ProductsScreen() {
     router.replace('/login');
   };
 
-  // Responsive columns: account for sidebar width on wide screens
-  const contentWidth = isWide ? screenWidth - 200 : screenWidth;
+  // Responsive columns
+  const contentWidth = screenWidth;
   const cardColumns =
     contentWidth < 480 ? 1 : contentWidth < 800 ? 2 : contentWidth < 1200 ? 3 : 4;
   const cardWidth = (contentWidth - 48 - (cardColumns - 1) * 16) / cardColumns;
@@ -70,11 +60,6 @@ export default function ProductsScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState<string>('');
   const [failedImages, setFailedImages] = useState<{ [key: string]: boolean }>({});
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-
-  // ── Cart state (UI only) ──────────────────────────────────────────────────
-  const [cartItems, setCartItems] = useState<any[]>([]);
-  const cartCount = cartItems.length;
 
   // ── Edit modal state ──────────────────────────────────────────────────────
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -104,14 +89,6 @@ export default function ProductsScreen() {
   };
 
   const onRefresh = async () => { setRefreshing(true); await fetchProducts(); };
-
-  // ── Cart handler ──────────────────────────────────────────────────────────
-  const handleAddToCart = (item: any) => {
-    setCartItems(prev => [...prev, item]);
-    if (Platform.OS === 'web') {
-      // Quick feedback animation could be added here
-    }
-  };
 
   // ── Add handlers ──────────────────────────────────────────────────────────
   const openAddModal = () => { setAddForm(EMPTY_FORM); setIsAddModalOpen(true); };
@@ -226,15 +203,6 @@ export default function ProductsScreen() {
     const brand = (item.brand || item.category || '').toLowerCase();
     const itemPrice = Number(item.price ?? 0);
 
-    // Category filter
-    if (activeCategory === 'perfume' && !brand.includes('perfume') && !name.includes('perfume')
-        && !name.includes('น้ำหอม') && !name.includes('edp') && !name.includes('edt')
-        && !name.includes('parfum') && !name.includes('eau')) {
-      // For 'perfume' category, show all since this is a perfume shop
-      // Actually, let's just show all if the category is perfume since all items are perfumes
-    }
-    // For now, all categories show all items (can be extended with DB field)
-
     if (!searchTerm) return true;
 
     // Extract number from search
@@ -256,63 +224,6 @@ export default function ProductsScreen() {
     if (!searchPrice && textPart) return textMatches;
     return textMatches && priceMatches;
   });
-
-  // ── Render Sidebar (Web only for wide screens) ────────────────────────────
-  const renderSidebar = () => {
-    if (!isWide) return null;
-
-    return (
-      <View style={styles.sidebar}>
-        {/* Category Title */}
-        <Text style={styles.sidebarTitle}>⚔ CATEGORY</Text>
-
-        {/* Category Items */}
-        {CATEGORIES.map((cat) => (
-          <TouchableOpacity
-            key={cat.key}
-            style={[
-              styles.categoryItem,
-              activeCategory === cat.key && styles.categoryItemActive,
-            ]}
-            onPress={() => setActiveCategory(cat.key)}
-          >
-            <Ionicons
-              name={cat.icon}
-              size={14}
-              color={activeCategory === cat.key ? '#FFFFFF' : '#c8a84e'}
-            />
-            <Text
-              style={[
-                styles.categoryText,
-                activeCategory === cat.key && styles.categoryTextActive,
-              ]}
-            >
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* Torch decoration */}
-        {Platform.OS === 'web' && (
-          <View style={{ alignItems: 'center', marginTop: 16 }}>
-            <div className="mc-torch" />
-          </View>
-        )}
-
-        {/* Cart Section */}
-        <View style={styles.cartSection}>
-          <Text style={styles.cartTitle}>🧰 YOUR CART</Text>
-          <View style={styles.cartCountRow}>
-            <Ionicons name="cube" size={20} color="#8b7a45" />
-            <Text style={styles.cartCountText}>{cartCount}</Text>
-          </View>
-          <TouchableOpacity style={styles.viewCartBtn}>
-            <Text style={styles.viewCartBtnText}>VIEW CART</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -384,11 +295,8 @@ export default function ProductsScreen() {
         </View>
       </View>
 
-      {/* ═══ Main Layout: Sidebar + Content ═══ */}
+      {/* ═══ Main Layout ═══ */}
       <View style={styles.mainLayout}>
-        {/* Sidebar */}
-        {renderSidebar()}
-
         {/* Main Scroll Content */}
         <ScrollView
           style={{ flex: 1 }}
@@ -424,7 +332,6 @@ export default function ProductsScreen() {
                   onImageError={handleImageError}
                   onEdit={openEditModal}
                   onDelete={handleDeleteProduct}
-                  onAddToCart={handleAddToCart}
                 />
               ))}
             </View>
