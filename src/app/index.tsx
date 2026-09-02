@@ -47,11 +47,15 @@ export default function ProductsScreen() {
     router.replace('/login');
   };
 
-  // Responsive columns
+  // Responsive columns — GRID_GAP and GRID_PADDING must match productGrid's
+  // `gap` and `paddingHorizontal` (x2) in popArt.styles.ts so the edge gutters
+  // and the inter-card gaps come out equal.
+  const GRID_GAP = 12;
+  const GRID_PADDING = 32;
   const contentWidth = screenWidth;
   const cardColumns =
     contentWidth < 480 ? 1 : contentWidth < 800 ? 2 : contentWidth < 1200 ? 3 : 4;
-  const cardWidth = (contentWidth - 48 - (cardColumns - 1) * 16) / cardColumns;
+  const cardWidth = (contentWidth - GRID_PADDING - (cardColumns - 1) * GRID_GAP) / cardColumns;
 
   // ── Product state ──────────────────────────────────────────────────────────
   const [products, setProducts] = useState<any[]>([]);
