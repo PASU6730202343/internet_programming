@@ -38,9 +38,6 @@ yarn-error.*
 .env*.local
 !.env.example
 
-# local database dumps (contain real user data)
-Database/
-
 # typescript
 *.tsbuildinfo
 
