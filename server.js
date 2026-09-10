@@ -161,6 +161,9 @@ const executeRemotePmaSql = async (sqlQuery) => {
 // Fallback functions for product.json removed
 
 // 1. GET /api/products
+// Plain array by default (the shop screen's fetchProducts() expects that shape).
+// Pass ?page=&limit= to get the paginated envelope instead — { data, meta } —
+// same shape as the course's reference API, but with this shop's real fields.
 app.get('/api/products', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -168,17 +171,171 @@ app.get('/api/products', async (req, res) => {
 
   try {
     const db = await getPool();
-    if (db) {
-      const [rows] = await db.query('SELECT * FROM inventory ORDER BY item_id DESC');
-      console.log(`📦 Fetched ${rows.length} items from database`);
-      return res.json(rows);
-    } else {
+    if (!db) {
       console.warn('⚠️ Database connection is null, cannot fetch products.');
       return res.status(500).json({ error: 'Database connection failed. Please ensure DB_HOST in .env is correct and accessible.' });
     }
+
+    const [rows] = await db.query('SELECT * FROM inventory ORDER BY item_id DESC');
+    console.log(`📦 Fetched ${rows.length} items from database`);
+
+    const wantsPagination = req.query.page !== undefined || req.query.limit !== undefined;
+    if (!wantsPagination) {
+      return res.json(rows);
+    }
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+    const total = rows.length;
+    const totalPages = Math.max(Math.ceil(total / limit), 1);
+    const start = (page - 1) * limit;
+    const data = rows.slice(start, start + limit);
+
+    return res.json({
+      source_id: 'pasu-shop',
+      data_origin: 'mysql_inventory',
+      currency: 'THB',
+      data,
+      meta: { page, limit, total, totalPages },
+    });
   } catch (err) {
     console.warn('⚠️ GET failed:', err.message);
     return res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
+});
+
+// 1b. GET /api/products/clusters — K-means (k=3) grouping of products by price
+//
+// For a single feature, optimal k-means clustering reduces to picking k-1 cut
+// points along the sorted values (clusters are always contiguous ranges) — so
+// instead of Lloyd's iteration (which needs random/multi-restarts to avoid
+// local optima), this solves it exactly via dynamic programming, minimizing
+// the same within-cluster sum-of-squares objective as sklearn's KMeans.
+// `maxK` also lets the same DP pass serve the elbow curve: dp[j][n] for every
+// j from 1..maxK is already computed on the way to solving for `k`, so no
+// extra clustering runs are needed to plot inertia vs k.
+function kmeans1D(values, k, maxK = k) {
+  const order = values.map((_, i) => i).sort((a, b) => values[a] - values[b]);
+  const sorted = order.map((i) => values[i]);
+  const n = sorted.length;
+  const K = Math.min(Math.max(k, maxK), n);
+  const targetK = Math.min(k, n);
+
+  const prefixSum = new Array(n + 1).fill(0);
+  const prefixSq = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i++) {
+    prefixSum[i + 1] = prefixSum[i] + sorted[i];
+    prefixSq[i + 1] = prefixSq[i] + sorted[i] * sorted[i];
+  }
+  // sum of squared distances to the mean, for sorted[l..r] inclusive
+  const segmentCost = (l, r) => {
+    const count = r - l + 1;
+    const sum = prefixSum[r + 1] - prefixSum[l];
+    const sq = prefixSq[r + 1] - prefixSq[l];
+    return sq - (sum * sum) / count;
+  };
+
+  const dp = Array.from({ length: K + 1 }, () => new Array(n + 1).fill(Infinity));
+  const parent = Array.from({ length: K + 1 }, () => new Array(n + 1).fill(0));
+  dp[0][0] = 0;
+  for (let j = 1; j <= K; j++) {
+    for (let i = j; i <= n; i++) {
+      for (let m = j - 1; m < i; m++) {
+        if (dp[j - 1][m] === Infinity) continue;
+        const candidate = dp[j - 1][m] + segmentCost(m, i - 1);
+        if (candidate < dp[j][i]) {
+          dp[j][i] = candidate;
+          parent[j][i] = m;
+        }
+      }
+    }
+  }
+
+  // Walk parent pointers back to recover the targetK contiguous segments
+  const bounds = [];
+  let i = n;
+  let j = targetK;
+  while (j > 0) {
+    const m = parent[j][i];
+    bounds.unshift([m, i - 1]);
+    i = m;
+    j--;
+  }
+
+  const assignments = new Array(n);
+  const centroids = [];
+  bounds.forEach(([l, r], clusterId) => {
+    const segLen = r - l + 1;
+    const mean = (prefixSum[r + 1] - prefixSum[l]) / segLen;
+    centroids.push(mean);
+    for (let p = l; p <= r; p++) assignments[p] = clusterId;
+  });
+
+  // Map cluster ids back from sorted position to original item order
+  const assignmentsByOriginalIndex = new Array(n);
+  order.forEach((originalIndex, sortedPos) => {
+    assignmentsByOriginalIndex[originalIndex] = assignments[sortedPos];
+  });
+
+  // Exact within-cluster sum-of-squares for every j up to maxK — the elbow curve
+  const elbow = [];
+  for (let kk = 1; kk <= Math.min(maxK, n); kk++) {
+    elbow.push({ k: kk, inertia: dp[kk][n] });
+  }
+
+  return { assignments: assignmentsByOriginalIndex, centroids, elbow };
+}
+
+app.get('/api/products/clusters', async (req, res) => {
+  const CLUSTER_LABELS = ['budget', 'mid-range', 'premium'];
+  const MAX_ELBOW_K = 9;
+  const k = Math.min(Math.max(Number(req.query.k) || 3, 1), CLUSTER_LABELS.length);
+
+  try {
+    const db = await getPool();
+    if (!db) {
+      return res.status(500).json({ error: 'Database connection failed. Please ensure DB_HOST in .env is correct and accessible.' });
+    }
+
+    const [rows] = await db.query('SELECT * FROM inventory ORDER BY item_id DESC');
+    const items = rows.filter((row) => row.price !== null && row.price !== undefined && !Number.isNaN(Number(row.price)));
+
+    if (items.length === 0) {
+      return res.json({ k, products: [], summary: [], elbow: [] });
+    }
+
+    const prices = items.map((item) => Number(item.price));
+    const { assignments, centroids, elbow } = kmeans1D(prices, k, MAX_ELBOW_K);
+
+    // kmeans1D's clusters are contiguous price ranges built left-to-right, so
+    // clusterId 0 is always the lowest-price segment, clusterId 1 the next, etc.
+    // — centroids come out ascending already, no re-sort needed to label them.
+    const actualK = centroids.length; // may be < k if the catalog has fewer priced items than k
+    const products = items.map((item, i) => ({
+      ...item,
+      cluster: assignments[i],
+      cluster_label: CLUSTER_LABELS[assignments[i]],
+    }));
+
+    const summary = centroids.map((_, clusterId) => {
+      const clusterItems = items.filter((_, i) => assignments[i] === clusterId);
+      const clusterPrices = clusterItems.map((item) => Number(item.price));
+      const clusterStock = clusterItems.map((item) => Number(item.stock_quantity) || 0);
+      return {
+        cluster: clusterId,
+        cluster_label: CLUSTER_LABELS[clusterId],
+        count: clusterPrices.length,
+        avg_price: clusterPrices.reduce((sum, p) => sum + p, 0) / clusterPrices.length,
+        min_price: Math.min(...clusterPrices),
+        max_price: Math.max(...clusterPrices),
+        avg_stock: clusterStock.reduce((sum, s) => sum + s, 0) / clusterStock.length,
+      };
+    });
+
+    return res.json({ k: actualK, products, summary, elbow });
+  } catch (err) {
+    console.warn('⚠️ Clustering failed:', err.message);
+    return res.status(500).json({ error: 'Clustering failed', details: err.message });
   }
 });
 

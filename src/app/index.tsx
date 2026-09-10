@@ -286,6 +286,13 @@ export default function ProductsScreen() {
 
         {/* Header Actions */}
         <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[styles.addNavBtn, { backgroundColor: '#4a7ab8', borderColor: '#6a9ad8' }]}
+            onPress={() => router.push('/dashboard')}
+          >
+            <Ionicons name="stats-chart" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+            <Text style={styles.addNavBtnText}>DASHBOARD</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.addNavBtn} onPress={openAddModal}>
             <Ionicons name="add-circle-sharp" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
             <Text style={styles.addNavBtnText}>+ CRAFT ITEM</Text>
